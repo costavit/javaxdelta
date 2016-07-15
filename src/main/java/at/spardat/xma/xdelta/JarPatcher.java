@@ -68,7 +68,7 @@ public class JarPatcher {
                 ZipEntry patchEntry = patch.getEntry(fileName);
                 if(patchEntry!=null) { // new Entry
                     if(patchEntry.isDirectory()) {
-                        ZipEntry outputEntry = new ZipEntry(patchEntry);
+                        ZipEntry outputEntry = ZipUtil.cloneZipEntry(patchEntry);
                         output.putNextEntry(outputEntry);
                         continue;
                     } else {
@@ -76,7 +76,7 @@ public class JarPatcher {
                         InputStream patchStream = patch.getInputStream(patchEntry);
                         for(int erg=patchStream.read(patchBytes);erg<patchBytes.length;erg+=patchStream.read(patchBytes,erg,patchBytes.length-erg));
                         patchStream.close();
-                        ZipEntry outputEntry = new ZipEntry(patchEntry);
+                        ZipEntry outputEntry = ZipUtil.cloneZipEntry(patchEntry);
                         output.putNextEntry(outputEntry);
                         output.write(patchBytes);
                     }
@@ -86,7 +86,7 @@ public class JarPatcher {
                         throw new FileNotFoundException(fileName+" not found in "+source.getName()+" or "+patch.getName());
                     }
                     if(sourceEntry.isDirectory()) {
-                        ZipEntry outputEntry = new ZipEntry(sourceEntry);
+                        ZipEntry outputEntry = ZipUtil.cloneZipEntry(sourceEntry);
                         output.putNextEntry(outputEntry);
                         continue;
                     }
@@ -107,7 +107,7 @@ public class JarPatcher {
                         patchStream.close();
 
                     } else { // unchanged Entry
-                        ZipEntry outputEntry = new ZipEntry(sourceEntry);
+                        ZipEntry outputEntry = ZipUtil.cloneZipEntry(sourceEntry);
                         output.putNextEntry(outputEntry);
                         output.write(sourceBytes);
                     }

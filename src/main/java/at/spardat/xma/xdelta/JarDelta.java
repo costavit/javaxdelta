@@ -65,82 +65,82 @@ public class JarDelta {
      * @throws IOException if an error occures reading or writing any entry in a zip file
      */
 	public void computeDelta(ZipFile source, ZipFile target, ZipOutputStream output) throws IOException {
-        try {
-            ByteArrayOutputStream listBytes = new ByteArrayOutputStream();
-            PrintWriter list = new PrintWriter(new OutputStreamWriter(listBytes));
-    		for(Enumeration enumer=target.entries();enumer.hasMoreElements();) {
-    			ZipEntry targetEntry = (ZipEntry)enumer.nextElement();
-                ZipEntry sourceEntry = source.getEntry(targetEntry.getName());
-                list.println(targetEntry.getName());
+		try {
+			ByteArrayOutputStream listBytes = new ByteArrayOutputStream();
+			PrintWriter list = new PrintWriter(new OutputStreamWriter(listBytes));
+			for(Enumeration<? extends ZipEntry> enumer=target.entries();enumer.hasMoreElements();) {
+				ZipEntry targetEntry = enumer.nextElement();
+				ZipEntry sourceEntry = source.getEntry(targetEntry.getName());
+				list.println(targetEntry.getName());
 
-                if(targetEntry.isDirectory()) {
-                    if(sourceEntry==null) {
-                        ZipEntry outputEntry = new ZipEntry(targetEntry);
-                        output.putNextEntry(outputEntry);
-                    }
-                    continue;
-                }
+				if(targetEntry.isDirectory()) {
+					if(sourceEntry==null) {
+						ZipEntry outputEntry = ZipUtil.cloneZipEntry(targetEntry);
+						output.putNextEntry(outputEntry);
+					}
+					continue;
+				}
 
-    			int targetSize = (int)targetEntry.getSize();
-    			byte[] targetBytes = new byte[targetSize];
-    			InputStream targetStream = target.getInputStream(targetEntry);
-    			for(int erg=targetStream.read(targetBytes);erg<targetBytes.length;erg+=targetStream.read(targetBytes,erg,targetBytes.length-erg));
-                targetStream.close();
-                int chunk = Delta.DEFAULT_CHUNK_SIZE;
-    			if(sourceEntry==null
-                        || sourceEntry.getSize() <= chunk
-                        || targetEntry.getSize() <= chunk) {  // new Entry od. alter Eintrag od. neuer Eintrag leer
-    				ZipEntry outputEntry = new ZipEntry(targetEntry);
-    				output.putNextEntry(outputEntry);
-    				output.write(targetBytes);
-    			} else {
-    				int sourceSize = (int)sourceEntry.getSize();
-    				byte[] sourceBytes = new byte[sourceSize];
-    				InputStream sourceStream = source.getInputStream(sourceEntry);
-    				for(int erg=sourceStream.read(sourceBytes);erg<sourceBytes.length;erg+=sourceStream.read(sourceBytes,erg,sourceBytes.length-erg));
-    				sourceStream.close();
-                    if(!equal(sourceBytes,targetBytes)) {
-        				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                        DiffWriter diffWriter = new GDiffWriter(new DataOutputStream(outputStream));
-        				Delta d = new Delta();
-        				d.compute(sourceBytes,target.getInputStream(targetEntry),diffWriter);
-                        diffWriter.close();
+				int targetSize = (int)targetEntry.getSize();
+				byte[] targetBytes = new byte[targetSize];
+				InputStream targetStream = target.getInputStream(targetEntry);
+				for(int erg=targetStream.read(targetBytes);erg<targetBytes.length;erg+=targetStream.read(targetBytes,erg,targetBytes.length-erg));
+				targetStream.close();
+				int chunk = Delta.DEFAULT_CHUNK_SIZE;
+				if(sourceEntry==null
+						|| sourceEntry.getSize() <= chunk
+						|| targetEntry.getSize() <= chunk) {  // new Entry od. alter Eintrag od. neuer Eintrag leer
+					ZipEntry outputEntry = ZipUtil.cloneZipEntry(targetEntry);
+						output.putNextEntry(outputEntry);
+						output.write(targetBytes);
+				} else {
+					int sourceSize = (int)sourceEntry.getSize();
+					byte[] sourceBytes = new byte[sourceSize];
+					InputStream sourceStream = source.getInputStream(sourceEntry);
+					for(int erg=sourceStream.read(sourceBytes);erg<sourceBytes.length;erg+=sourceStream.read(sourceBytes,erg,sourceBytes.length-erg));
+					sourceStream.close();
+					if(!equal(sourceBytes,targetBytes)) {
+						ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+						DiffWriter diffWriter = new GDiffWriter(new DataOutputStream(outputStream));
+						Delta d = new Delta();
+						d.compute(sourceBytes,target.getInputStream(targetEntry),diffWriter);
+						diffWriter.close();
 
-        				ZipEntry outputEntry = new ZipEntry(targetEntry.getName()+".gdiff");
-                        outputEntry.setTime(targetEntry.getTime());
-        				output.putNextEntry(outputEntry);
-        				output.write(outputStream.toByteArray());
-                    }
-    			}
-    		}
-            list.close();
-            ZipEntry listEntry = new ZipEntry("META-INF/file.list");
-            output.putNextEntry(listEntry);
-            output.write(listBytes.toByteArray());
-        } finally {
-            source.close();
-            target.close();
-            output.close();
-        }
+						ZipEntry outputEntry = new ZipEntry(targetEntry.getName()+".gdiff");
+						outputEntry.setTime(targetEntry.getTime());
+						output.putNextEntry(outputEntry);
+						output.write(outputStream.toByteArray());
+					}
+				}
+			}
+			list.close();
+			ZipEntry listEntry = new ZipEntry("META-INF/file.list");
+			output.putNextEntry(listEntry);
+			output.write(listBytes.toByteArray());
+		} finally {
+			source.close();
+			target.close();
+			output.close();
+		}
 	}
 
-    /**
-     * Test if the content of two byte arrays is completly identical.
-     * @return true if source and target contain the same bytes.
-     */
+	/**
+	 * Test if the content of two byte arrays is completly identical.
+	 * @return true if source and target contain the same bytes.
+	 */
 	public boolean equal(byte[] source,byte[]target) {
-	    if(source.length!=target.length) return false;
-        for(int i=0;i<source.length;i++) {
-            if(source[i]!=target[i]) return false;
-        }
-        return true;
-    }
+		if(source.length!=target.length) return false;
+		for(int i=0;i<source.length;i++) {
+			if(source[i]!=target[i]) return false;
+		}
+		return true;
+	}
 
-    /**
-     * Main method to make {@link #computeDelta(ZipFile, ZipFile, ZipOutputStream)} available at
-     * the command line.<br>
-     * usage JarDelta source target output
-     */
+	/**
+	 * Main method to make {@link #computeDelta(ZipFile, ZipFile, ZipOutputStream)} available at
+	 * the command line.<br>
+	 * usage JarDelta source target output
+	 */
 	public static void main(String[] args) throws IOException {
 		if (args.length != 3) {
 			System.err.println("usage JarDelta source target output");

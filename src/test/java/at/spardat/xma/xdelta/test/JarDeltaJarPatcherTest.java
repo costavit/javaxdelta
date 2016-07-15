@@ -152,8 +152,8 @@ public class JarDeltaJarPatcherTest {
 
         ZipOutputStream out = new ZipOutputStream(new FileOutputStream(target));
 
-        for (Enumeration enumer = zipSource.entries(); enumer.hasMoreElements();) {
-            ZipEntry sourceEntry = (ZipEntry) enumer.nextElement();
+        for (Enumeration<? extends ZipEntry> enumer = zipSource.entries(); enumer.hasMoreElements();) {
+            ZipEntry sourceEntry = enumer.nextElement();
             out.putNextEntry(new ZipEntry(sourceEntry.getName()));
 
             byte[] oldBytes = toBytes(zipSource, sourceEntry);
@@ -163,12 +163,12 @@ public class JarDeltaJarPatcherTest {
             out.closeEntry();
         }
 
-        //zusätzlichen Entry schreiben
+        //zusï¿½tzlichen Entry schreiben
         out.putNextEntry(new ZipEntry("zipentry" + entryMaxSize+1));
         byte[] bytes = getRandomBytes();
         out.write(bytes, 0, bytes.length);
 
-//      zusätzlichen leeres Entry schreiben
+//      zusï¿½tzlichen leeres Entry schreiben
         out.putNextEntry(new ZipEntry("zipentry" + (entryMaxSize+2)));
         out.closeEntry();
 
@@ -253,8 +253,8 @@ public class JarDeltaJarPatcherTest {
         boolean rc = false;
 
         try {
-            for (Enumeration enumer = zipSource.entries(); enumer.hasMoreElements();) {
-                ZipEntry sourceEntry = (ZipEntry) enumer.nextElement();
+            for (Enumeration<? extends ZipEntry> enumer = zipSource.entries(); enumer.hasMoreElements();) {
+                ZipEntry sourceEntry = enumer.nextElement();
                 ZipEntry resultEntry = resultZip.getEntry(sourceEntry.getName());
                 assertNotNull("Entry nicht generiert: " + sourceEntry.getName(),
                         resultEntry);
